@@ -1,0 +1,75 @@
+---
+title: "Milestone Report"
+author: "David"
+date: "31/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message=FALSE, warning=FALSE)
+```
+
+## Load the tidyverse and tidytext packages
+First of all, we will load key libraries for our analysis.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(tidytext)
+library(dplyr)
+library(ggplot2)
+library(DT)
+data(stop_words)
+```
+
+## Summary
+
+We will read the files in the "en_US" folder and convert them into the tidy text format.
+
+```{r cache=FALSE}
+file_list <- list.files(pattern = "*en_US*",
+                        recursive = TRUE)
+
+texts <- data.frame(file=character(),
+                    paragraph=as.numeric(),
+                    text=character(),
+                    stringsAsFactors = FALSE) # creates empty dataframe
+
+for (i in 1:length(file_list)) {
+  p <- read.delim(file_list[i],
+                  header=FALSE,
+                  col.names = "text",
+                  stringsAsFactors = FALSE) # read.delim here is automatically splitting by paragraph
+  p <- p %>% mutate(file=sub(".txt", "", x=file_list[i]), # add filename as label
+                    paragraph=row_number()) # add paragraph number
+  texts <- bind_rows(texts, p) # adds to existing dataframe
+}
+words <- texts %>% unnest_tokens(word, text)
+head(words)
+```
+
+Now we will remove stop words like "a", "after", "you" or "your". 
+
+```{r}
+words <- words %>% anti_join(stop_words)
+```
+
+After we have removed stop words, we will display a datatable with the number of times each words appears in the texts.
+
+```{r}
+words_count <- words %>% count(word,sort = TRUE)
+words_count %>% head(1000) %>% datatable()
+```
+
+Here we have a histogram with the top 10 words by their number of times each word appears.
+
+```{r}
+words_count %>% 
+  head() %>% 
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+```
+
+
+
