@@ -38,7 +38,7 @@ for (i in 1:length(file_list)) {
   p <- read.delim(file_list[i],
                   header=FALSE,
                   col.names = "text",
-                  stringsAsFactors = FALSE) # read.delim here is automatically splitting by paragraph
+                  stringsAsFactors = FALSE) # read.delim here is automatically splitting by paragraph.
   p <- p %>% mutate(file=sub(".txt", "", x=file_list[i]), # add filename as label
                     paragraph=row_number()) # add paragraph number
   texts <- bind_rows(texts, p) # adds to existing dataframe

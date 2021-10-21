@@ -1,0 +1,62 @@
+---
+title: "model"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(dplyr)
+library(ggplot2)
+library(DT)
+data(stop_words)
+library(sbo)
+```
+
+
+## Read file
+
+```{r}
+file_list <- list.files(pattern = "*en_US.tw*",
+                        recursive = TRUE)
+for (i in 1:length(file_list)) {
+  p <- read.delim(file_list[i],
+                  header=FALSE,
+                  col.names = "text",
+                  stringsAsFactors = FALSE)
+}
+sample50 <- sample(p$text, length(p$text)/10)
+```
+## Create model
+
+```{r}
+predt <- sbo_predtable(object = sample50, # preloaded example dataset
+                   N = 3, # Train a 3-gram model
+                   dict = target ~ 0.75, # cover 75% of training corpus
+                   .preprocess = sbo::preprocess, # Preprocessing transformation 
+                   EOS = ".?!:;", # End-Of-Sentence tokens
+                   lambda = 0.4, # Back-off penalization in SBO algorithm
+                   L = 3L, # Number of predictions for input
+                   filtered = "<UNK>" # Exclude the <UNK> token from predictions
+                   )
+predictor <- sbo_predictor(predt)
+save(predt,file="pred.rda")
+#load("pred.rda")
+```
+
+## Evaluation
+
+```{r}
+set.seed(28850)
+evaluation <- eval_sbo_predictor(predictor, test = sample50)
+evaluation %>% summarise(accuracy = sum(correct)/n(), 
+                   uncertainty = sqrt(accuracy * (1 - accuracy) / n())
+                        )
+```
+
+
+
